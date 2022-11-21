@@ -6,7 +6,7 @@ import Timer from './components/Timer.vue';
 
 <template>
   <!-- FROM: https://www.freepik.com/free-vector/flat-design-zodiac-sign-collection_15186144.htm -->
-  <img id="logo" alt="Pomotauri logo" src="./assets/logo.png" width="150"/>
+  <img id="logo" alt="Pomotauri logo" src="./assets/logo.svg" width="150"/>
   <Timer />
   <audio id="beepAudio" >
     <!-- Provide a link of beep sound from internet -->

@@ -2,7 +2,7 @@
 <div>
     <div id="timer">{{ display }}</div>
     <div>
-        <button v-if="intervalId" @click="stopTimer" class="btn-timer">
+        <button v-if="isRunning" @click="stopTimer" class="btn-timer">
             Stop timer
         </button>
         <button v-else @click="startTimer" class="btn-timer">
@@ -16,86 +16,77 @@
 </template>
 
 <script>
-class Step {
-    constructor(name, duration) {
-        this.name = name
-        this.duration = duration
-    }
+const STEPS = [
+    {name: "work", duration: 25*60},
+    {name: "break", duration: 5*60},
+    {name: "work", duration: 25*60},
+    {name: "break", duration: 5*60},
+    {name: "long break", duration: 15*60},
+]
+
+function doubleDigit(number) {
+    return (number).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false})
 }
 
+function formatTimeSpan(spanSeconds) {
+    const minutes = Math.floor(spanSeconds / 60)
+    const seconds = Math.floor(spanSeconds - minutes * 60)
+    return doubleDigit(minutes) + ":" + doubleDigit(seconds)
+}
 
-class Schedule {
-    constructor() {
-        this.steps = [
-            new Step("work", 25*60),
-            new Step("break", 5*60),
-        ]
-        this.stepIndex = 0
-    }
-    
-    currentStep() {
-        const idx = this.stepIndex % this.steps.length
-        return this.steps[idx]
-    }
-    
-    moveToNextStep() {
-        this.stepIndex++
-    }
+function notify() {
+    let audio = document.getElementById('beepAudio');
+    audio.play()
 }
 
 export default {
     data() {
-        const schedule = new Schedule()
         return {
+            stepIndex: 0,
             intervalId: undefined,
             startDate: undefined,
-            schedule: schedule,
-            display: this.formatTimeSpan(schedule.currentStep().duration),
+            currentDate: undefined,
+        }
+    },
+    computed: {
+        isRunning() {
+            return Boolean(this.intervalId)
+        },
+        currentStep() {
+            const idx = this.stepIndex % STEPS.length
+            return STEPS[idx]
+        },
+        secondsLeftInStep() {
+            const diffSeconds = (this.currentDate - this.startDate) / 1000
+            return this.currentStep.duration - diffSeconds
+        },
+        display() {
+            const seconds = this.isRunning ? this.secondsLeftInStep : this.currentStep.duration
+            const text = formatTimeSpan(seconds)
+            document.title = text + " Pomotauri"
+            return text
         }
     },
     methods: {
         startTimer: function () {
             this.startDate = new Date()
+            this.currentDate = this.startDate
 
             this.intervalId = setInterval(() => {
-                const leftSeconds = this.secondsLeftInStep()
-                this.setTimerDisplay(this.formatTimeSpan(leftSeconds))
-
-                if (leftSeconds <= 0) {
-                    this.schedule.moveToNextStep()
-                    this.stopTimer()
-                    this.notify()
+                this.currentDate = new Date()
+                if (this.secondsLeftInStep <= 0) {
+                    this.goToNextStep()
+                    notify()
                 }
-            }, 100)
+            }, 250)
         },
         stopTimer: function () {
             clearInterval(this.intervalId)
             this.intervalId = null
-            this.setTimerDisplay(this.formatTimeSpan(this.schedule.currentStep().duration))
         },
         goToNextStep: function () {
-            this.schedule.moveToNextStep()
             this.stopTimer()
-        },
-        notify: function () {
-            let audio = document.getElementById('beepAudio');
-            audio.play()
-        },
-        secondsLeftInStep: function () {
-            const diffSeconds = (new Date() - this.startDate) / 1000
-            return this.schedule.currentStep().duration - diffSeconds
-        },
-        formatTimeSpan: function (spanSeconds) {
-            const minutes = Math.floor(spanSeconds / 60)
-            const seconds = Math.floor(spanSeconds - minutes * 60)
-            return this.doubleDigit(minutes) + ":" + this.doubleDigit(seconds)
-        },
-        doubleDigit: function (number) {
-            return (number).toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false})
-        },
-        setTimerDisplay: function (text) {
-            this.display = text
-            document.title = text
+            this.stepIndex++
         }
     }
 }
