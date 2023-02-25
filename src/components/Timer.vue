@@ -27,7 +27,7 @@ class Schedule {
     const breakStep = new Step("break", breakMins * 60)
 
     this.steps = [
-      workStep, breakStep, workStep, breakStep, workStep, breakStep,
+      workStep, breakStep, workStep, breakStep, workStep,
       new Step("break", longBreakMins * 60),
     ]
     this.stepIndex = 0
